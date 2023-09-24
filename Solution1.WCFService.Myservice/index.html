@@ -1,0 +1,97 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <script type="text/javascript" src="./js/knockout-3.5.1.js"></script>
+</head>
+<body>
+    <table>
+        <tr>
+            <td>
+                <a>date selection range</a>
+                <button data-bind="click: BgetDat">GetData</button>
+                <input type="text" maxlength="30" data-bind="textInput: Dat1 " />
+                <input type="text" maxlength="30" data-bind="textInput: Dat2 " />
+                <a>selection frequency</a>
+                <select data-bind="options: optionValues, value: selectedAlgoritm"></select>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <pre data-bind="text: Outcome"></pre>
+            </td>
+        </tr>
+        <tr>
+            <!--<td>-->
+                <!--<button data-bind="click: Calculator">Calculate</button>-->
+                
+                <!--<pre data-bind="text: Reshen"></pre>
+            </td>-->
+        </tr>
+        </table>
+    <table>
+        <thead>
+            <tr>
+                <th>date</th>
+                <th>temperature</th>
+                <th>Wind Direction</th>
+            </tr>
+        </thead>
+        <tbody data-bind="foreach: DataArray">
+            <tr>
+                <td style="text-align: center; width:280px;" data-bind="text: Date"></td>
+                <td style="text-align: right; width:60px;" data-bind="text: Temp"></td>
+                <td style="text-align: right; width:60px;" data-bind="text: WindDir"></td>
+            </tr>
+        </tbody>
+    </table>
+    <script>
+
+        var ClickCounterViewModel = function () {
+
+            this.RequestHeaders = {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            };
+
+            optVal: ["a", "b", "c"],
+            this.optionValues = ko.observableArray(["a","b","c"]);//иниц массива
+            this.selectedAlgoritm = ko.observable("a");
+            this.Reshen = ko.observable(0);
+            this.Bul1 = ko.observable(false);
+            this.Chr1 = ko.observable('Z');
+            this.Dat1 = ko.observable("2022-01-03T12:00:00Z");
+            this.Dat2 = ko.observable("2022-01-03T14:00:00Z");
+            this.Outcome = ko.observable(0);//отладочные данные
+            this.DataArray = ko.observableArray([{ "Date": "2022-01-03T12:02:00.0000000Z", "Temp": -7.943155634687893, "WindDir": 150.77161296306565 }]);
+
+
+            this.BgetDat = function () {/*d*/
+                fetch("http://localhost:50343/Service2.svc/dan?" +
+                    "s=" + this.Dat1() +
+                    "&po=" + this.Dat2() +
+                    "&algoritm=" + this.selectedAlgoritm(),
+                    { headers: this.RequestHeaders })
+                    .then(response =>  response.json() )
+                    .then(data => {
+                        this.Outcome(JSON.stringify(data));
+                        this.DataArray(data);
+                    })
+            };
+
+            //загрузка алг в бокс
+            this.GetAlgoritms = function () {
+                fetch("http://localhost:50343/Service2.svc/algoritms",
+                    { headers: this.RequestHeaders })
+                    .then(response => response.json())
+                    .then(data => this.optionValues(data));
+            };
+        };
+
+        var model = new ClickCounterViewModel();
+        model.GetAlgoritms();
+        ko.applyBindings(model);
+    </script>
+</body>
+</html>
