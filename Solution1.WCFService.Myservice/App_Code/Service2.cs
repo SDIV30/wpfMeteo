@@ -21,14 +21,14 @@ public class Service2
         return new List<string> { "10min", "30min", "1Hr" };
     }
 
-    [WebInvoke(Method = "GET", UriTemplate = "/dan?s={dataS}&po={dataPo}&algoritm={algoritm}")]
+    [WebInvoke(Method = "GET", UriTemplate = "/dan?s={dataS}&po={dataPo}&algoritm={algoritm}")]//request
     public List<Pogoda> GetData(string dataPo, string dataS, string algoritm = "alg1")
     {
         var receivedResult = new List<Pogoda>();
         //var resultSort = new List<Pogoda>();
         var averagedResult = new List<Pogoda>();
-
-        try
+        
+        try//time intervals
         {
             var start = DateTime.Parse(dataS);
             var stop = DateTime.Parse(dataPo);
@@ -54,7 +54,7 @@ public class Service2
                 string[] spl = lines[c].Split(';');
                 DateTime date = Convert.ToDateTime(spl[0]);
  
-                if (start <= date && date <= stop/* && spl[2] != " - 1"*/)
+                if (start <= date && date <= stop)
                 {
                     receivedResult.Add(
                         new Pogoda
@@ -66,10 +66,10 @@ public class Service2
                         );
                 }
             }
-            List<Pogoda> sortedResult = receivedResult.OrderBy(res => res.Dat).ToList();//отсорт список
+            List<Pogoda> sortedResult = receivedResult.OrderBy(res => res.Dat).ToList();//sorted list
 
-            //SORTIROVKA SNIZU  
 
+            //sorting
             var sortEnd = sortedResult[0].Dat.AddSeconds(timeInterval);
             var sortBegin = sortedResult[0].Dat;
 
@@ -96,7 +96,7 @@ public class Service2
                     _temp = 0;
                     _wind = 0;
 
-                    //записали среднюю температуру и ветер
+                    //average temp and wind direction
                     averagedResult.Add(new Pogoda
                     {
                         Dat = sortBegin,
@@ -130,8 +130,7 @@ public class Pogoda
 {
     [IgnoreDataMember]
     public DateTime Dat { get; set; }
-    //[DataMember]
-    //public int Index { get; set; }//!!!!!!!!!!!!!
+
     [DataMember]
     public string Date { get { return Dat.ToUniversalTime().ToString("o"); } set { } }
 
