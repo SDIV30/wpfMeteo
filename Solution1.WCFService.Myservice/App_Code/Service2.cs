@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.Serialization;
 using System.Security.Cryptography.X509Certificates;
 using System.ServiceModel;
@@ -27,7 +28,6 @@ public class Service2
     {
         MeteoProcessing met = new MeteoProcessing();
         var receivedResult = new List<Pogoda>();
-        //var resultSort = new List<Pogoda>();
         var averagedResult = new List<Pogoda>();
         
         try//time intervals
@@ -49,8 +49,8 @@ public class Service2
                 default:
                     break;
             }
-
-            string[] lines = System.IO.File.ReadAllLines(@"C:\Users\stepa\Documents\GitHub\wpfMeteo\Solution1.WCFService.Myservice\App_Data\meteo.csv");//path to file meteo.csv
+            string path =Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"App_Data\meteo.csv");
+            string[] lines = System.IO.File.ReadAllLines(path);
             for (int c = 1; c < lines.Length; c++)
             {
                 string[] splited = lines[c].Split(';');
@@ -69,7 +69,6 @@ public class Service2
                 }
             }
             List<Pogoda> sortedResult = receivedResult.OrderBy(res => res.Dat).ToList();//sorted list
-
 
             //sorting
            averagedResult= met.AveragingBegin(timeInterval, sortedResult);

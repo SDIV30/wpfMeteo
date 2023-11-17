@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
@@ -16,6 +17,7 @@ public class MeteoProcessing
     
     public List<Pogoda> AveragingBegin(int timeInterval, List<Pogoda> sortedResult) 
     {
+        List<Task<Pogoda>> tasks = new List<Task<Pogoda>>();
         List<Pogoda> averagedData = new List<Pogoda>();
         var sortEnd = sortedResult[0].Dat.AddSeconds(timeInterval);
         var sortBegin = sortedResult[0].Dat;
@@ -23,6 +25,8 @@ public class MeteoProcessing
         double temperature = 0;
         double windDirection = 0;
 
+        Stopwatch sw = new Stopwatch();
+        sw.Start();
         for (int i = 0; i < sortedResult.Count; i++)
         {
             if (sortedResult[i].Dat < sortEnd)
@@ -34,21 +38,34 @@ public class MeteoProcessing
             
             else
             {
-                var pog = PogodaCalcTask(temperature,windDirection,count,sortBegin);
-                // pog.Wait();
-                averagedData.Add(pog.Result);//task POGODA
-                temperature=0;
+                //System.Diagnostics.Debug.WriteLine("task launched "+ i);
+                //var pog = PogodaCalcTask(temperature,windDirection,count,sortBegin);
+                //averagedData.Add(pog.Result);
+                System.Diagnostics.Debug.WriteLine("task launched "+ i);
+                tasks.Add(PogodaCalcAsync(temperature, windDirection, count, sortBegin,i));
+                System.Diagnostics.Debug.WriteLine("step over");
+                temperature =0;
                 windDirection=0;
                 count = 0;
                 sortBegin = sortEnd;
                 sortEnd = sortEnd.AddSeconds(timeInterval);
             }
         }
+        sw.Stop();
+        Task.WaitAll(tasks.ToArray());
+
+        foreach (var task in tasks) {
+            averagedData.Add((task.Result));
+        }
+        
+        System.Diagnostics.Debug.WriteLine("Execution took "+sw.ElapsedMilliseconds+"ms");
         return averagedData;
     }
     //придумать что то для асинка
-    private async Task<Pogoda> PogodaCalcAsync(double temperature, double windDirection, int count, DateTime sortBegin) {
+    private async Task<Pogoda> PogodaCalcAsync(double temperature, double windDirection, int count, DateTime sortBegin,int id) {
+        System.Diagnostics.Debug.WriteLine("task started " + id);
         var res = await PogodaCalcTask(temperature, windDirection, count, sortBegin);
+        System.Diagnostics.Debug.WriteLine("task finished "+id);
         return res;
     }
 
