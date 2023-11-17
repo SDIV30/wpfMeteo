@@ -10,6 +10,7 @@ using System.ServiceModel.Activation;
 using System.ServiceModel.Web;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 [ServiceContract(Namespace = "")]
 [AspNetCompatibilityRequirements(RequirementsMode = AspNetCompatibilityRequirementsMode.Allowed)]
@@ -24,6 +25,7 @@ public class Service2
     [WebInvoke(Method = "GET", UriTemplate = "/dan?s={dataS}&po={dataPo}&algoritm={algoritm}")]//request
     public List<Pogoda> GetData(string dataPo, string dataS, string algoritm = "alg1")
     {
+        MeteoProcessing met = new MeteoProcessing();
         var receivedResult = new List<Pogoda>();
         //var resultSort = new List<Pogoda>();
         var averagedResult = new List<Pogoda>();
@@ -48,11 +50,11 @@ public class Service2
                     break;
             }
 
-            string[] lines = System.IO.File.ReadAllLines(@"C:\Users\stepa\Downloads\meteo.csv");//path to file meteo.csv
+            string[] lines = System.IO.File.ReadAllLines(@"C:\Users\stepa\Documents\GitHub\wpfMeteo\Solution1.WCFService.Myservice\App_Data\meteo.csv");//path to file meteo.csv
             for (int c = 1; c < lines.Length; c++)
             {
-                string[] spl = lines[c].Split(';');
-                DateTime date = Convert.ToDateTime(spl[0]);
+                string[] splited = lines[c].Split(';');
+                DateTime date = Convert.ToDateTime(splited[0]);
  
                 if (start <= date && date <= stop)
                 {
@@ -60,8 +62,8 @@ public class Service2
                         new Pogoda
                         {
                             Dat = date,
-                            Temp = Convert.ToDouble(spl[1], CultureInfo.InvariantCulture),
-                            WindDir = Convert.ToDouble(spl[2], CultureInfo.InvariantCulture)
+                            Temp = Convert.ToDouble(splited[1], CultureInfo.InvariantCulture),
+                            WindDir = Convert.ToDouble(splited[2], CultureInfo.InvariantCulture)
                         }
                         );
                 }
@@ -70,45 +72,8 @@ public class Service2
 
 
             //sorting
-            var sortEnd = sortedResult[0].Dat.AddSeconds(timeInterval);
-            var sortBegin = sortedResult[0].Dat;
-
-            var counter = 0;
-            double _temp = 0;
-            double _wind = 0;
-
-            var limitedPogoda = new List<Pogoda>();
-            for (int i = 0; i < sortedResult.Count; i++)
-            {
-                if (sortedResult[i].Dat < sortEnd)
-                {            
-                    counter++;
-                    _temp += sortedResult[i].Temp; 
-                    _wind += sortedResult[i].WindDir;
-                }
-                else
-                {
-                    double newTemp = 0;
-                    double newWind = 0;
-
-                    newTemp = _temp / counter;
-                    newWind = _wind / counter;
-                    _temp = 0;
-                    _wind = 0;
-
-                    //average temp and wind direction
-                    averagedResult.Add(new Pogoda
-                    {
-                        Dat = sortBegin,
-                        Temp = Math.Round(newTemp, 1),
-                        WindDir = Math.Round(newWind, 1)
-                    });
-                    
-                    counter = 0;
-                    sortBegin = sortEnd;
-                    sortEnd = sortEnd.AddSeconds(timeInterval);
-                }
-            }
+           averagedResult= met.AveragingBegin(timeInterval, sortedResult);
+            
         }
         catch (Exception ex)
         {
@@ -116,13 +81,7 @@ public class Service2
         }
 
         return averagedResult;
-
-
     }
-
-
-
-
 }
 
 [DataContract]
