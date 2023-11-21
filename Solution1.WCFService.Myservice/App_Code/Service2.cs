@@ -68,9 +68,8 @@ public class Service2
                         );
                 }
             }
-            List<Pogoda> sortedResult = receivedResult.OrderBy(res => res.Dat).ToList();//sorted list
-            //sorting
-           //averagedResult= met.AveragingBegin(timeInterval, sortedResult);
+            List<Pogoda> sortedResult = receivedResult.OrderBy(res => res.Dat).ToList();
+            
             met.sendResult += averagedResult.Add;
             met.AveragingBegin(timeInterval, sortedResult);
             
@@ -80,7 +79,7 @@ public class Service2
             throw new WebFaultException<string>(ex.Message, System.Net.HttpStatusCode.InternalServerError);
         }
         
-        return averagedResult;
+        return averagedResult.OrderBy(res => res.Dat).ToList();
     }
 }
 
