@@ -70,16 +70,15 @@ public class Service2
             }
             List<Pogoda> sortedResult = receivedResult.OrderBy(res => res.Dat).ToList();
             
-            met.sendResult += averagedResult.Add;
-            met.AveragingBegin(timeInterval, sortedResult);
-            
+            averagedResult = met.AveragingBegin(timeInterval, sortedResult);
+
         }
         catch (Exception ex)
         {
             throw new WebFaultException<string>(ex.Message, System.Net.HttpStatusCode.InternalServerError);
         }
-        
-        return averagedResult.OrderBy(res => res.Dat).ToList();
+
+        return averagedResult;
     }
 }
 
