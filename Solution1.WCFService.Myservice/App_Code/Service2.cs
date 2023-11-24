@@ -27,7 +27,7 @@ public class Service2
     public List<Pogoda> GetData(string dataPo, string dataS, string algoritm = "alg1")
     {
         MeteoProcessing met = new MeteoProcessing();
-        var receivedResult = new List<Pogoda>();
+        var receivedList = new List<Pogoda>();
         var averagedResult = new List<Pogoda>();
         
         try//time intervals
@@ -55,22 +55,22 @@ public class Service2
             {
                 string[] splited = lines[c].Split(';');
                 DateTime date = Convert.ToDateTime(splited[0]);
- 
+
                 if (start <= date && date <= stop)
                 {
-                    receivedResult.Add(
+                    receivedList.Add(
                         new Pogoda
                         {
-                            Dat = date,
+                            _date = date,
                             Temp = Convert.ToDouble(splited[1], CultureInfo.InvariantCulture),
                             WindDir = Convert.ToDouble(splited[2], CultureInfo.InvariantCulture)
                         }
                         );
                 }
             }
-            List<Pogoda> sortedResult = receivedResult.OrderBy(res => res.Dat).ToList();
             
-            averagedResult = met.AveragingBegin(timeInterval, sortedResult);
+            
+            averagedResult = met.AveragingBegin(timeInterval, receivedList);
 
         }
         catch (Exception ex)
@@ -86,10 +86,10 @@ public class Service2
 public class Pogoda
 {
     [IgnoreDataMember]
-    public DateTime Dat { get; set; }
+    public DateTime _date;
 
     [DataMember]
-    public string Date { get { return Dat.ToUniversalTime().ToString("o"); } set { } }
+    public string Date { get { return _date.ToUniversalTime().ToString("o"); } set { } }
 
     [DataMember]
     public double Temp { get; set; }

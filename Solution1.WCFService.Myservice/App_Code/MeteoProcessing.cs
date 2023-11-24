@@ -11,91 +11,82 @@ using System.Web;
 /// </summary>
 public class MeteoProcessing
 {
-   
     public MeteoProcessing()
     {
     }
-    
-    public List<Pogoda> AveragingBegin(int timeInterval, List<Pogoda> sortedResult)
+    public List<Pogoda> AveragingBegin(int timeInterval, List<Pogoda> receivedList)
     {
+        List<Pogoda> sortedList = receivedList.OrderBy(res => res._date).ToList();
         List<Task<Pogoda>> tasks = new List<Task<Pogoda>>();
         List<Pogoda> results = new List<Pogoda>();
-        var sortBegin = sortedResult[0].Dat;
-        DateTime sortEnd = sortBegin.AddSeconds(timeInterval);  
-
+        
         Stopwatch sw = new Stopwatch();
 
         sw.Start();
-        
-        while (sortBegin < sortedResult[sortedResult.Count-1].Dat)
+
+        for (int iStart = 0; iStart < sortedList.Count;)
         {
-            //Debug.Print("begun");
-            tasks.Add(IntervalSumCalcC(sortedResult, sortBegin, sortEnd));
-            sortBegin = sortEnd;
-            sortEnd = sortEnd.AddSeconds(timeInterval);
+            DateTime dateEnd = sortedList[iStart]._date.AddSeconds(timeInterval);
+
+            int iEnd = sortedList.Count - 1;
+            for (int c = iStart + 1; c < sortedList.Count; c++)
+            {
+                if (sortedList[c]._date > dateEnd && sortedList[c - 1]._date < dateEnd)
+                {
+                    iEnd = c - 1;
+                    break;
+                }
+                if (sortedList[c]._date == dateEnd)
+                {
+                    iEnd = c;
+                    break;
+                }
+            }
+            if (iStart < iEnd)
+            {
+                tasks.Add(IntervalSumCalcC(sortedList, iStart, iEnd));
+            }
+            iStart = iEnd + 1;
         }
 
         Task.WaitAll(tasks.ToArray());
+        var aa =tasks.Select(ts => ts.Result).OrderBy(res=>res._date);
         sw.Stop();
-        foreach (Task<Pogoda> ts in tasks)
-        { 
-            results.Add(ts.Result);
-        }
-        System.Diagnostics.Debug.WriteLine("Execution took "+sw.ElapsedMilliseconds+"ms");
-        return results.OrderBy(res => res.Dat).Where(res => res.Dat >= sortedResult[0].Dat).ToList();
+        System.Diagnostics.Debug.WriteLine("Execution took " + sw.ElapsedMilliseconds + "ms");
+        return results=aa.ToList();
     }
-    
-    
-    private Pogoda IntervalSumCalc(List<Pogoda> sortedResult, DateTime sortBegin, DateTime sortEnd) //расчёт по интервалам С ПО
+
+    private Pogoda IntervalSumCalc(List<Pogoda> sortedList, int beginIndex, int endIndex) //расчёт по интервалам С ПО
     {
-        int beginIndex = sortedResult.FindIndex(x => x.Dat == sortBegin);
-        int endIndex = sortedResult.FindIndex(x => x.Dat == sortEnd);
-        DateTime newSortBegin = sortBegin.AddSeconds(10); 
-        while(beginIndex == -1) {
-            beginIndex = sortedResult.FindIndex(x => x.Dat == newSortBegin);
-            newSortBegin.AddSeconds(10);
-        }
         int count = 0;
         double temperature = 0;
         double windDirection = 0;
-        Pogoda pog = new Pogoda();
-        try
-        {
+        
             for (int i = beginIndex; i < endIndex; i++)
             {
-                if (sortedResult[i].WindDir != -1)
-                {
                     count++;
-                    temperature += sortedResult[i].Temp;
-                    windDirection += sortedResult[i].WindDir;
-                }
+                    temperature += sortedList[i].Temp;
+                    windDirection += sortedList[i].WindDir;
             }
-            if (count != 0)
-            {
                 double averageTemperature = temperature / count;
                 double averageWindDirection = windDirection / count;
 
                 //average temp and wind direction
                 Pogoda resultPogoda = new Pogoda
                 {
-                    Dat = sortBegin,
+                    _date = sortedList[beginIndex]._date,
                     Temp = Math.Round(averageTemperature, 1),
                     WindDir = Math.Round(averageWindDirection, 1)
                 };
-                //Debug.Print("finished");
                 return resultPogoda;
-            }
-        }
-        catch (System.ArgumentOutOfRangeException){}
-        return pog;
     }
 
-    private Task<Pogoda> IntervalSumCalcAsync(List<Pogoda> sortedResult, DateTime sortBegin, DateTime sortEnd) {
-        var res =Task.Run(() =>  IntervalSumCalc(sortedResult, sortBegin, sortEnd));
+    private Task<Pogoda> IntervalSumCalcAsync(List<Pogoda> sortedList, int beginIndex, int endIndex) {
+        var res =Task.Run(() =>  IntervalSumCalc(sortedList, beginIndex , endIndex));
         return res;
     }
-    private async Task<Pogoda> IntervalSumCalcC(List<Pogoda> sortedResult, DateTime sortBegin, DateTime sortEnd) {
-        var res =await IntervalSumCalcAsync(sortedResult, sortBegin, sortEnd);
+    private async Task<Pogoda> IntervalSumCalcC(List<Pogoda> sortedList, int beginIndex, int endIndex) {
+        var res =await IntervalSumCalcAsync(sortedList, beginIndex, endIndex);
         return res;
     }
 
