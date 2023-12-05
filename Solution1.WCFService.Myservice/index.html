@@ -3,18 +3,24 @@
 <head>
     <meta charset="utf-8" />
     <title></title>
-    <script type="text/javascript" src="./js/knockout-3.5.1.js"></script>
+    <script src="js/knockout-3.5.1.js" type="text/javascript"></script>
+    <script src="js/rlab.ext.js" type="text/javascript"></script>
+    <script src="js/chart.min.js" type="text/javascript"></script>
+    <script src="js/knockout.chart.js" type="text/javascript"></script>
+
 </head>
 <body>
     <table>
         <tr>
             <td>
                 <a>date selection range</a>
-                <button data-bind="click: BgetDat">GetData</button>
-                <input type="text" maxlength="30" data-bind="textInput: Dat1 " />
-                <input type="text" maxlength="30" data-bind="textInput: Dat2 " />
+                <button data-bind="click: GetData">GetData</button>
+                <input type="text" maxlength="30" data-bind="textInput: dateBegin " />
+                <input type="text" maxlength="30" data-bind="textInput: dateEnd " />
                 <a>selection frequency</a>
-                <select data-bind="options: optionValues, value: selectedAlgoritm"></select>
+                <select data-bind="options: Scales, value: selectedScale"></select>
+                <a>averaging algorithm</a>
+                <select data-bind="options: Algorithms, value: selectedAlgorithm"></select>
             </td>
         </tr>
         <tr>
@@ -22,14 +28,10 @@
                 <pre data-bind="text: Outcome"></pre>
             </td>
         </tr>
-        <tr>
-            <!--<td>-->
-                <!--<button data-bind="click: Calculator">Calculate</button>-->
-                
-                <!--<pre data-bind="text: Reshen"></pre>
-            </td>-->
-        </tr>
-        </table>
+    </table>
+    <div>
+        <canvas class="" data-bind="chart: { type: 'line', data: ChartData, options: ChartOptions }"></canvas>
+    </div id="Graph">
     <table>
         <thead>
             <tr>
@@ -55,42 +57,77 @@
                 "Accept": "application/json",
             };
 
-            optVal: ["a", "b", "c"],
-            this.optionValues = ko.observableArray(["a","b","c"]);//иниц массива
-            this.selectedAlgoritm = ko.observable("a");
-            this.Reshen = ko.observable(0);
-            this.Bul1 = ko.observable(false);
-            this.Chr1 = ko.observable('Z');
-            this.Dat1 = ko.observable("2022-01-03T12:00:00Z");
-            this.Dat2 = ko.observable("2022-01-03T14:00:00Z");
+            this.ChartOptions = {
+                responsive: true,
+                animation: false,
+                observeChanges: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                elements: {
+                    line: { borderWidth: 1 },
+                    point: { radius: 0 }
+                },
+                parsing: { xAxisKey: 'Date' },
+                plugins: { legend: { display: false } },
+            };
+
+            this.ChartData = ko.pureComputed(() => {
+                let items = this.DataArray().slice().sort((a, b) => (a.Date - b.Date));
+                //console.log(JSON.stringify(items));
+                return {
+                    labels: items.map(i => i.Date.format("HH-MM-ss")),
+                    //labels: items.map(i => i.Date),
+                    datasets: [
+                        { label: 'Temp', data: items, parsing: { yAxisKey: 'Temp' }, borderColor: 'green' },
+                        //{ label: 'WindDir', data: items, parsing: { yAxisKey: 'WindDir' }, borderColor: 'blue' },
+                    ]
+                };
+            });
+
+            var NewScale = document.getElementById("Graph").offsetWidth;
+
+            this.Scales = ko.observableArray(["600", "1800", "3600"]);//bind scales
+            this.Algorithms = ko.observableArray([]);
+            this.selectedScale = ko.observable("600");
+            this.selectedAlgorithm = ko.observable("");
+
+
+            this.dateBegin = ko.observable("2022-01-03T12:00:00Z");
+            this.dateEnd = ko.observable("2022-01-03T14:00:00Z");
             this.Outcome = ko.observable(0);//отладочные данные
-            this.DataArray = ko.observableArray([{ "Date": "2022-01-03T12:02:00.0000000Z", "Temp": -7.943155634687893, "WindDir": 150.77161296306565 }]);
+            this.DataArray = ko.observableArray([]);
 
 
-            this.BgetDat = function () {/*d*/
+            this.GetData = function () {
                 fetch("http://localhost:50343/Service2.svc/dan?" +
-                    "s=" + this.Dat1() +
-                    "&po=" + this.Dat2() +
-                    "&algoritm=" + this.selectedAlgoritm(),
+                    "dateBegin=" + this.dateBegin() +
+                    "&dateEnd=" + this.dateEnd() +
+                    "&algorithm=" + this.selectedAlgorithm() +
+                    "&scale=" + NewScale,//this.selectedScale()
                     { headers: this.RequestHeaders })
-                    .then(response =>  response.json() )
+                    .then(response => response.json())
                     .then(data => {
-                        //this.Outcome(JSON.stringify(data));// :)
+                        data.forEach(i => {
+                            i.Date = new Date(i.Date);
+                        });
+
                         this.DataArray(data);
                     })
             };
 
-            //загрузка алг в бокс
-            this.GetAlgoritms = function () {
-                fetch("http://localhost:50343/Service2.svc/algoritms",
+            //receive Algorithms
+            this.GetAlgorithms = function () {
+                fetch("http://localhost:50343/Service2.svc/algorithms",
                     { headers: this.RequestHeaders })
                     .then(response => response.json())
-                    .then(data => this.optionValues(data));
+                    .then(data => this.Algorithms(["", ...data]));
             };
         };
 
         var model = new ClickCounterViewModel();
-        model.GetAlgoritms();
+        model.GetAlgorithms();
         ko.applyBindings(model);
     </script>
 </body>

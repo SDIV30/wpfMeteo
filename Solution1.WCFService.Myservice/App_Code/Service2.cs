@@ -17,38 +17,26 @@ using System.Threading.Tasks;
 [AspNetCompatibilityRequirements(RequirementsMode = AspNetCompatibilityRequirementsMode.Allowed)]
 public class Service2
 {
-    [WebInvoke(Method = "GET", UriTemplate = "/algoritms")]
-    public List<string> GetAlgoritms()
+    MeteoProcessing met = new MeteoProcessing();
+
+    [WebInvoke(Method = "GET", UriTemplate = "/algorithms")]
+    public List<string> GetAlgorithms()
     {
-        return new List<string> { "10min", "30min", "1Hr" };
+        return met.GetAlgorithms();
     }
 
-    [WebInvoke(Method = "GET", UriTemplate = "/dan?s={dataS}&po={dataPo}&algoritm={algoritm}")]//request
-    public List<Pogoda> GetData(string dataPo, string dataS, string algoritm = "alg1")
+    [WebInvoke(Method = "GET", UriTemplate = "/dan?dateBegin={dateBegin}&dateEnd={dateEnd}&algorithm={algorithm}&scale={scale}")]//request
+    public List<Pogoda> GetData(string dateEnd, string dateBegin, string algorithm, string scale ="600")
     {
-        MeteoProcessing met = new MeteoProcessing();
+        
         var receivedList = new List<Pogoda>();
         var averagedResult = new List<Pogoda>();
         
         try//time intervals
         {
-            var start = DateTime.Parse(dataS);
-            var stop = DateTime.Parse(dataPo);
-            var timeInterval = 600;
-            switch (algoritm)
-            {
-                case "10min":
-                    timeInterval = 600;
-                    break;
-                case "30min":
-                    timeInterval = 1800;
-                    break;
-                case "1Hr":
-                    timeInterval = 3600;
-                    break;
-                default:
-                    break;
-            }
+            var start = DateTime.Parse(dateBegin);
+            var stop = DateTime.Parse(dateEnd);
+
             string path =Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"App_Data\meteo.csv");
             string[] lines = System.IO.File.ReadAllLines(path);
             for (int c = 1; c < lines.Length; c++)
@@ -68,9 +56,16 @@ public class Service2
                         );
                 }
             }
-            
-            
-            averagedResult = met.AveragingBegin(timeInterval, receivedList);
+
+            if (met.GetAlgorithms().Contains(algorithm))
+            {
+                var timeInterval = Convert.ToInt32(scale);
+                averagedResult = met.AveragingBegin(timeInterval, receivedList, algorithm);
+            }
+            else
+            {
+                averagedResult = receivedList.OrderBy(x => x._date).ToList();
+            }
 
         }
         catch (Exception ex)
