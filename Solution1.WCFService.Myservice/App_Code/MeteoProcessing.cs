@@ -28,7 +28,7 @@ public class MeteoProcessing
         return functionName.Keys.ToList();
     }
 
-    public List<Pogoda> AveragingBegin(int timeInterval, List<Pogoda> receivedList, string algorithm)
+    public List<Pogoda> AveragingBegin(long timeInterval, List<Pogoda> receivedList, string algorithm)
     {
         List<Pogoda> sortedList = receivedList.OrderBy(res => res._date).ToList();
         List<Task<Pogoda>> tasks = new List<Task<Pogoda>>();
@@ -40,8 +40,9 @@ public class MeteoProcessing
 
         for (int iStart = 0; iStart < sortedList.Count;)
         {
-            DateTime dateEnd = sortedList[iStart]._date.AddSeconds(timeInterval);
-
+            //DateTime dateEnd = sortedList[iStart]._date.AddSeconds(timeInterval);
+            DateTime dateEnd = sortedList[iStart]._date.AddMilliseconds(timeInterval);
+            //пересмотреть алгоритм
             int iEnd = sortedList.Count - 1;
             for (int c = iStart + 1; c < sortedList.Count; c++)
             {
@@ -95,7 +96,7 @@ public class MeteoProcessing
 
     private Pogoda AverageArithmetic(List<Pogoda> sortedList, int beginIndex, int endIndex) 
     {
-        int count = 0;
+        long count = 0;
         double temperature = 0;
         double windDirection = 0;
         
@@ -120,7 +121,7 @@ public class MeteoProcessing
 
     private Pogoda AverageQuadratic(List<Pogoda> sortedList, int beginIndex, int endIndex)
     {
-        int count = 0;
+        long count = 0;
         double temperature = 0;
         double windDirection = 0;
         for (int i = beginIndex; i < endIndex; i++)
@@ -145,12 +146,12 @@ public class MeteoProcessing
     }
 
     private Pogoda AverageMoving(List<Pogoda> sortedList, int beginIndex, int endIndex) {
-        int count = endIndex - beginIndex;
+        long count = endIndex - beginIndex;
         double temperature = 0;
         double windDirection = 0;
         if(count==0)
             count = 1;
-        int divideBy = 0;
+        long divideBy = 0;
 
         for (int i = beginIndex; i < endIndex; i++)
         {

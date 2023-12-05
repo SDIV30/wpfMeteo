@@ -26,7 +26,7 @@ public class Service2
     }
 
     [WebInvoke(Method = "GET", UriTemplate = "/dan?dateBegin={dateBegin}&dateEnd={dateEnd}&algorithm={algorithm}&scale={scale}")]//request
-    public List<Pogoda> GetData(string dateEnd, string dateBegin, string algorithm, string scale ="600")
+    public List<Pogoda> GetData(string dateEnd, string dateBegin, string algorithm, string scale)
     {
         
         var receivedList = new List<Pogoda>();
@@ -59,7 +59,9 @@ public class Service2
 
             if (met.GetAlgorithms().Contains(algorithm))
             {
-                var timeInterval = Convert.ToInt32(scale);
+                var timeSpan = Convert.ToDateTime(dateEnd) - Convert.ToDateTime(dateBegin);//разница во времени
+                long timeInterval = Convert.ToInt64(timeSpan.TotalMilliseconds/ Convert.ToInt64(scale));//интервал по пикселям
+                //var timeInterval = Convert.ToInt64(scale);
                 averagedResult = met.AveragingBegin(timeInterval, receivedList, algorithm);
             }
             else

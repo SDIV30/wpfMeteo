@@ -17,8 +17,7 @@
                 <button data-bind="click: GetData">GetData</button>
                 <input type="text" maxlength="30" data-bind="textInput: dateBegin " />
                 <input type="text" maxlength="30" data-bind="textInput: dateEnd " />
-                <a>selection frequency</a>
-                <select data-bind="options: Scales, value: selectedScale"></select>
+                
                 <a>averaging algorithm</a>
                 <select data-bind="options: Algorithms, value: selectedAlgorithm"></select>
             </td>
@@ -29,9 +28,9 @@
             </td>
         </tr>
     </table>
-    <div>
+    <div id="GraphCanvas">
         <canvas class="" data-bind="chart: { type: 'line', data: ChartData, options: ChartOptions }"></canvas>
-    </div id="Graph">
+    </div>
     <table>
         <thead>
             <tr>
@@ -86,11 +85,7 @@
                 };
             });
 
-            var NewScale = document.getElementById("Graph").offsetWidth;
-
-            this.Scales = ko.observableArray(["600", "1800", "3600"]);//bind scales
             this.Algorithms = ko.observableArray([]);
-            this.selectedScale = ko.observable("600");
             this.selectedAlgorithm = ko.observable("");
 
 
@@ -99,13 +94,14 @@
             this.Outcome = ko.observable(0);//отладочные данные
             this.DataArray = ko.observableArray([]);
 
+            //var canvasScale = document.getElementById("GraphCanvas").clientWidth;
 
             this.GetData = function () {
                 fetch("http://localhost:50343/Service2.svc/dan?" +
                     "dateBegin=" + this.dateBegin() +
                     "&dateEnd=" + this.dateEnd() +
                     "&algorithm=" + this.selectedAlgorithm() +
-                    "&scale=" + NewScale,//this.selectedScale()
+                    "&scale=" + document.getElementById("GraphCanvas").clientWidth,
                     { headers: this.RequestHeaders })
                     .then(response => response.json())
                     .then(data => {
