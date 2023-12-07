@@ -17,7 +17,7 @@
                 <button data-bind="click: GetData">GetData</button>
                 <input type="text" maxlength="30" data-bind="textInput: dateBegin " />
                 <input type="text" maxlength="30" data-bind="textInput: dateEnd " />
-                
+
                 <a>averaging algorithm</a>
                 <select data-bind="options: Algorithms, value: selectedAlgorithm"></select>
             </td>
@@ -28,8 +28,8 @@
             </td>
         </tr>
     </table>
-    <div id="GraphCanvas">
-        <canvas class="" data-bind="chart: { type: 'line', data: ChartData, options: ChartOptions }"></canvas>
+    <div style="position: relative;">
+        <canvas data-bind="chart: { type: 'line', data: ChartData, options: ChartOptions }"></canvas>
     </div>
     <table>
         <thead>
@@ -56,8 +56,14 @@
                 "Accept": "application/json",
             };
 
+                  this.ChartWidth = 0;
+
             this.ChartOptions = {
                 responsive: true,
+                onResize: (chart, size) => {
+                    this.ChartWidth = size.width;
+                },
+
                 animation: false,
                 observeChanges: true,
                 interaction: {
@@ -97,11 +103,17 @@
             //var canvasScale = document.getElementById("GraphCanvas").clientWidth;
 
             this.GetData = function () {
+
+                dateB = new Date(this.dateBegin());
+                dateE = new Date(this.dateEnd());
+                scale = Math.ceil(Math.abs(dateE - dateB) / this.ChartWidth);
+
                 fetch("http://localhost:50343/Service2.svc/dan?" +
                     "dateBegin=" + this.dateBegin() +
                     "&dateEnd=" + this.dateEnd() +
                     "&algorithm=" + this.selectedAlgorithm() +
-                    "&scale=" + document.getElementById("GraphCanvas").clientWidth,
+                    "&scale=" + scale,
+
                     { headers: this.RequestHeaders })
                     .then(response => response.json())
                     .then(data => {

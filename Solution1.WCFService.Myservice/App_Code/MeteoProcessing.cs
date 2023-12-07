@@ -33,7 +33,7 @@ public class MeteoProcessing
         List<Pogoda> sortedList = receivedList.OrderBy(res => res._date).ToList();
         List<Task<Pogoda>> tasks = new List<Task<Pogoda>>();
         List<Pogoda> results = new List<Pogoda>();
-        
+
         Stopwatch sw = new Stopwatch();
 
         sw.Start();
@@ -42,7 +42,6 @@ public class MeteoProcessing
         {
             //DateTime dateEnd = sortedList[iStart]._date.AddSeconds(timeInterval);
             DateTime dateEnd = sortedList[iStart]._date.AddMilliseconds(timeInterval);
-            //пересмотреть алгоритм
             int iEnd = sortedList.Count - 1;
             for (int c = iStart + 1; c < sortedList.Count; c++)
             {
@@ -57,6 +56,10 @@ public class MeteoProcessing
                     break;
                 }
             }
+            if (iStart == iEnd)
+            {
+                results.Add(sortedList[iStart]);
+            }
             if (iStart < iEnd)
             {
                 tasks.Add(AverageRunAsynchronously(sortedList, iStart, iEnd,algorithm));
@@ -65,10 +68,11 @@ public class MeteoProcessing
         }
 
         Task.WaitAll(tasks.ToArray());
-        var aa = tasks.Select(ts => ts.Result).OrderBy(res=>res._date);
+        var aa = tasks.Select(ts => ts.Result);
+        results.AddRange(aa);
         sw.Stop();
         System.Diagnostics.Debug.WriteLine("Execution took " + sw.ElapsedMilliseconds + "ms");
-        return results=aa.ToList();
+        return results.OrderBy(res=>res._date).ToList();
     }
 
 
@@ -99,7 +103,7 @@ public class MeteoProcessing
         long count = 0;
         double temperature = 0;
         double windDirection = 0;
-        
+      
             for (int i = beginIndex; i < endIndex; i++)
             {
                     count++;

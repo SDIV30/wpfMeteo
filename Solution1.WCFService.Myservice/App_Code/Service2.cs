@@ -59,9 +59,7 @@ public class Service2
 
             if (met.GetAlgorithms().Contains(algorithm))
             {
-                var timeSpan = Convert.ToDateTime(dateEnd) - Convert.ToDateTime(dateBegin);//разница во времени
-                long timeInterval = Convert.ToInt64(timeSpan.TotalMilliseconds/ Convert.ToInt64(scale));//интервал по пикселям
-                //var timeInterval = Convert.ToInt64(scale);
+                long timeInterval = Convert.ToInt64(scale);
                 averagedResult = met.AveragingBegin(timeInterval, receivedList, algorithm);
             }
             else
