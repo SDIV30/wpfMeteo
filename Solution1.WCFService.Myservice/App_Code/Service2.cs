@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -26,17 +27,18 @@ public class Service2
     }
 
     [WebInvoke(Method = "GET", UriTemplate = "/dan?dateBegin={dateBegin}&dateEnd={dateEnd}&algorithm={algorithm}&scale={scale}")]//request
-    public List<Pogoda> GetData(string dateEnd, string dateBegin, string algorithm, string scale)
+    //public List<Pogoda> GetData(string dateEnd, string dateBegin, string algorithm, string scale)
+    public ResultedDataset GetData(string dateEnd, string dateBegin, string algorithm, string scale)
     {
         
         var receivedList = new List<Pogoda>();
         var averagedResult = new List<Pogoda>();
-        
+        ResultedDataset dataset = new ResultedDataset();
         try//time intervals
         {
             var start = DateTime.Parse(dateBegin);
             var stop = DateTime.Parse(dateEnd);
-
+            Stopwatch sw = new Stopwatch();
             string path =Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"App_Data\meteo.csv");
             string[] lines = System.IO.File.ReadAllLines(path);
             for (int c = 1; c < lines.Length; c++)
@@ -57,6 +59,7 @@ public class Service2
                 }
             }
 
+            sw.Start();
             if (met.GetAlgorithms().Contains(algorithm))
             {
                 long timeInterval = Convert.ToInt64(scale);
@@ -66,18 +69,27 @@ public class Service2
             {
                 averagedResult = receivedList.OrderBy(x => x._date).ToList();
             }
-
+            sw.Stop();
+            dataset.ExecutionTime = sw.Elapsed.TotalMilliseconds;
+            dataset.MeteoData = averagedResult;
         }
         catch (Exception ex)
         {
             throw new WebFaultException<string>(ex.Message, System.Net.HttpStatusCode.InternalServerError);
         }
 
-        return averagedResult;
+        return dataset;
     }
 }
 
 [DataContract]
+public class ResultedDataset
+{
+    [DataMember]
+    public double ExecutionTime { get; set; }
+    [DataMember]
+    public List<Pogoda> MeteoData { get; set; }
+}
 public class Pogoda
 {
     [IgnoreDataMember]

@@ -20,7 +20,6 @@ public class MeteoProcessing
         functionName["AverageArithmetic"] = AverageArithmetic;
         functionName["AverageWeighted"] = AverageWeighted;
         functionName["AverageMoving"] = AverageMoving;
-        functionName["AverageQuadratic"] = AverageQuadratic;
     }
 
     public List<string> GetAlgorithms()
@@ -34,13 +33,8 @@ public class MeteoProcessing
         List<Task<Pogoda>> tasks = new List<Task<Pogoda>>();
         List<Pogoda> results = new List<Pogoda>();
 
-        Stopwatch sw = new Stopwatch();
-
-        sw.Start();
-
         for (int iStart = 0; iStart < sortedList.Count;)
         {
-            //DateTime dateEnd = sortedList[iStart]._date.AddSeconds(timeInterval);
             DateTime dateEnd = sortedList[iStart]._date.AddMilliseconds(timeInterval);
             int iEnd = sortedList.Count - 1;
             for (int c = iStart + 1; c < sortedList.Count; c++)
@@ -70,11 +64,8 @@ public class MeteoProcessing
         Task.WaitAll(tasks.ToArray());
         var aa = tasks.Select(ts => ts.Result);
         results.AddRange(aa);
-        sw.Stop();
-        System.Diagnostics.Debug.WriteLine("Execution took " + sw.ElapsedMilliseconds + "ms");
         return results.OrderBy(res=>res._date).ToList();
     }
-
 
     private Pogoda AverageWeighted(List<Pogoda> sortedList, int beginIndex, int endIndex) {
         double weight = (100.0 / (double)(endIndex - beginIndex))/100.0;
@@ -122,32 +113,7 @@ public class MeteoProcessing
                 };
                 return resultPogoda;
     }
-
-    private Pogoda AverageQuadratic(List<Pogoda> sortedList, int beginIndex, int endIndex)
-    {
-        long count = 0;
-        double temperature = 0;
-        double windDirection = 0;
-        for (int i = beginIndex; i < endIndex; i++)
-        {
-            count++;
-            temperature += sortedList[i].Temp * sortedList[i].Temp;
-            windDirection += sortedList[i].WindDir * sortedList[i].WindDir;
-        }
-        double averageSquareTemperature = temperature / count;
-        double averageSquareWindDirection = windDirection / count;
-
-        double averageTemperature = Math.Sqrt(averageSquareTemperature);
-        double averageWindDirection = Math.Sqrt(averageSquareWindDirection);
-        //average temp and wind direction
-        Pogoda resultPogoda = new Pogoda
-        {
-            _date = sortedList[beginIndex]._date,
-            Temp = Math.Round(averageTemperature, 1),
-            WindDir = Math.Round(averageWindDirection, 1)
-        };
-        return resultPogoda;
-    }
+    //добавить новый алгоритм
 
     private Pogoda AverageMoving(List<Pogoda> sortedList, int beginIndex, int endIndex) {
         long count = endIndex - beginIndex;
